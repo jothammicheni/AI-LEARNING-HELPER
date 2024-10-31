@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,10 +8,72 @@ datasource db {
 }
 
 model Users {
-  userId         Int     @id @default(autoincrement())
-  email       String  @unique
+  userId      Int       @id @default(autoincrement())
   name        String
+  email       String    @unique
   password    String
-  isVerified  Boolean @default(false)
-  role        String  @default("subscriber")
+  role        String    @default("subscriber")
+  isVerified  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  courses     Courses[] @relation("UserCourses")
+  progress    Progress[]
+  comments    Comments[]
+}
+
+model Courses {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  coverPath   String
+  tutorId     Int
+  tutor       Users     @relation("UserCourses", fields: [tutorId], references: [userId])
+  chapters    Chapters[]
+  quizzes     Quizzes[]
+  comments    Comments[]
+  progress    Progress[] // Back-reference to Progress
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Chapters {
+  id          Int       @id @default(autoincrement())
+  courseId    Int
+  title       String
+  contentType String
+  contentPath String
+  course      Courses   @relation(fields: [courseId], references: [id])
+  progress    Progress[] // Back-reference to Progress
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Quizzes {
+  id          Int       @id @default(autoincrement())
+  courseId    Int
+  question    String
+  answer      String
+  course      Courses   @relation(fields: [courseId], references: [id])
+  createdAt   DateTime  @default(now())
+}
+
+model Progress {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  courseId          Int
+  chapterId         Int
+  progressPercentage Float
+  lastAccessed      DateTime
+  user              Users     @relation(fields: [userId], references: [userId])
+  course            Courses   @relation(fields: [courseId], references: [id])
+  chapter           Chapters  @relation(fields: [chapterId], references: [id])
+}
+
+model Comments {
+  id          Int       @id @default(autoincrement())
+  courseId    Int
+  comment     String
+  course      Courses   @relation(fields: [courseId], references: [id])
+  userId      Int?
+  user        Users?    @relation(fields: [userId], references: [userId])
+  createdAt   DateTime  @default(now())
 }
