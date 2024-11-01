@@ -2,6 +2,7 @@ import express from 'express';
 import {protect } from  "../middleware/protected";
 import { addCourses, 
     uploadCover,
+    updateCover,
     getCourses,
     getCourseById,
     deleteCourse,
@@ -14,6 +15,6 @@ router.post('/add',protect, uploadCover, addCourses);
 router.get("/getCourses",getCourses);
 router.get('/:id',protect,getCourseById);
 router.delete('/:id',protect,deleteCourse ); 
-router.patch('/update',updateCourse );
+router.patch('/update/:courseId',updateCover,updateCourse );
 export {router as courseRoutes}; 
   
