@@ -22,8 +22,6 @@ app.use('/api/course', courseRoutes );
 
 // Error handling middleware
 app.use(errorHandler);
-
-
 // Health check route
 app.get("/", (req: Request, res: Response) => {
     res.status(200).send("hello");
