@@ -67,10 +67,11 @@ To set up the project locally, follow these steps:
 6. **Set up environment variables:**
    - Configure API keys for AI services in a .env file.
 
-## Technologies used:
-   - **Frontend:** React with TypeScript, Tailwind CSS
-   - **Backend:** Node.js, Express
-   - **Database:** PostgreSQL with Prisma ORM
-   - **Package Manager:** PNPM
-   - **AI Services:** Google Text-to-Speech API, OpenAI API for interactive quizzes
-   
+## Usage:
+
+  - **Admin/Tutor Features:** Manage courses and monitor user progress.
+  - **User Features**:
+     - Access courses with an option for text-to-audio playback.
+     - Take interactive quizzes with real-time AI-driven responses.
+     - Track progress across multiple courses.
+  
