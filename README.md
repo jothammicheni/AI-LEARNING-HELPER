@@ -50,3 +50,10 @@ To set up the project locally, follow these steps:
    ```bash
    git clone https://github.com/jothammicheni/AI-LEARNING-HELPER.git
    cd AI-LEARNING-HELPER
+2. **Install Dependencies**
+   Run the following command to install the necessary dependencies:
+
+   ```bash
+   pnpm install
+3. **Set up the database:**
+4. 
