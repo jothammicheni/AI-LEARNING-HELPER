@@ -56,4 +56,14 @@ To set up the project locally, follow these steps:
    ```bash
    pnpm install
 3. **Set up the database:**
-4. 
+   - Ensure PostgreSQL is installed and running.
+   - Create a new database and update your .env file with the database connection details.
+4. **Run migrations** (if applicable):
+   ```bash
+   npx prisma migrate dev
+5. **Start the application:**
+    ```bash
+    pnpm run dev
+6. **Set up environment variables:**
+   - Configure API keys for AI services in a .env file.
+   
