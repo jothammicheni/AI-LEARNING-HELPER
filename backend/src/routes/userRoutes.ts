@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { RegisterUser, loginUser,getAllUsers,logoutUser} from "../controllers/userController";
-import {protect } from  "../middleware/protected";
+import {protect,isAdmin} from  "../middleware/AuthMiddleware";
 
-const router = Router(); // No need to create an Express app here
+const router = Router(); 
 
-// User registration route
+
 router.post("/register", RegisterUser);
 router.post("/login", loginUser);
 router.get("/logout", logoutUser);
-router.get("/getUsers",protect ,getAllUsers);
+router.get("/getUsers",protect,isAdmin,getAllUsers);
+
 export { router as userRoutes };

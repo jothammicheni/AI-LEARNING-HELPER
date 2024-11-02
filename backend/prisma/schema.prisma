@@ -8,72 +8,74 @@ datasource db {
 }
 
 model Users {
-  userId      Int       @id @default(autoincrement())
-  name        String
-  email       String    @unique
-  password    String
-  role        String    @default("subscriber")
-  isVerified  Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  courses     Courses[] @relation("UserCourses")
-  progress    Progress[]
-  comments    Comments[]
+  userId     Int        @id @default(autoincrement())
+  email      String     @unique
+  name       String
+  password   String
+  isVerified Boolean    @default(false)
+  role       String     @default("subscriber")
+  createdAt  DateTime   @default(now())
+  comments   Comments[]
+  courses    Courses[]  @relation("UserCourses")
+  progress   Progress[]
 }
 
 model Courses {
-  id          Int       @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   title       String
   description String
-  coverPath   String
   tutorId     Int
-  tutor       Users     @relation("UserCourses", fields: [tutorId], references: [userId])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  coverPath   String
+  isCompleted Boolean    @default(false)
+  isStated    Boolean    @default(false)
   chapters    Chapters[]
-  quizzes     Quizzes[]
   comments    Comments[]
-  progress    Progress[] // Back-reference to Progress
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  tutor       Users      @relation("UserCourses", fields: [tutorId], references: [userId])
+  progress    Progress[]
+  quizzes     Quizzes[]
 }
 
 model Chapters {
-  id          Int       @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   courseId    Int
   title       String
-  contentType String
   contentPath String
-  course      Courses   @relation(fields: [courseId], references: [id])
-  progress    Progress[] // Back-reference to Progress
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isCompleted Boolean    @default(false)
+  course      Courses    @relation(fields: [courseId], references: [id])
+  progress    Progress[]
 }
 
 model Quizzes {
-  id          Int       @id @default(autoincrement())
-  courseId    Int
-  question    String
-  answer      String
-  course      Courses   @relation(fields: [courseId], references: [id])
-  createdAt   DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+  course    Courses  @relation(fields: [courseId], references: [id])
 }
 
 model Progress {
-  id                Int       @id @default(autoincrement())
-  userId            Int
-  courseId          Int
-  chapterId         Int
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  courseId           Int
+  chapterId          Int
   progressPercentage Float
-  lastAccessed      DateTime
-  user              Users     @relation(fields: [userId], references: [userId])
-  course            Courses   @relation(fields: [courseId], references: [id])
-  chapter           Chapters  @relation(fields: [chapterId], references: [id])
+  lastAccessed       DateTime
+  chapter            Chapters @relation(fields: [chapterId], references: [id])
+  course             Courses  @relation(fields: [courseId], references: [id])
+  user               Users    @relation(fields: [userId], references: [userId])
 }
 
 model Comments {
-  id          Int       @id @default(autoincrement())
-  courseId    Int
-  comment     String
-  course      Courses   @relation(fields: [courseId], references: [id])
-  userId      Int?
-  user        Users?    @relation(fields: [userId], references: [userId])
-  createdAt   DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  courseId  Int
+  comment   String
+  userId    Int?
+  createdAt DateTime @default(now())
+  course    Courses  @relation(fields: [courseId], references: [id])
+  user      Users?   @relation(fields: [userId], references: [userId])
 }
