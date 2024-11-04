@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Courses" ADD COLUMN     "accesedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+-- AlterTable
+ALTER TABLE "Quizzes" ALTER COLUMN "answer" SET DEFAULT '';

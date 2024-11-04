@@ -1,6 +1,4 @@
-import dotenv from 'dotenv'
 import {Response,Request,NextFunction} from 'express'
-
 
 const errorHandler=(err:Error,req:Request,res:Response,next:NextFunction)=>{
     const statusCode=res.statusCode?res.statusCode:500
@@ -12,6 +10,8 @@ const errorHandler=(err:Error,req:Request,res:Response,next:NextFunction)=>{
         stack:process.env.NODE_ENV==='development'?
         err.stack: null
     })
+
+    next()
 }
 
 export  {errorHandler}
