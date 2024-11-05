@@ -54,21 +54,21 @@ model Quizzes {
   id        Int      @id @default(autoincrement())
   courseId  Int
   question  String
-  answer    String  @default("")
+  answer    String   @default("")
   createdAt DateTime @default(now())
   course    Courses  @relation(fields: [courseId], references: [id])
 }
 
 model Progress {
-  id                 Int      @id @default(autoincrement())
-  userId             Int
+  id                 Int       @id @default(autoincrement())
   courseId           Int
-  chapterId          Int
   progressPercentage Float
   lastAccessed       DateTime
-  chapter            Chapters @relation(fields: [chapterId], references: [id])
-  course             Courses  @relation(fields: [courseId], references: [id])
-  user               Users    @relation(fields: [userId], references: [userId])
+  course             Courses   @relation(fields: [courseId], references: [id])
+  Users              Users?    @relation(fields: [usersUserId], references: [userId])
+  usersUserId        Int?
+  Chapters           Chapters? @relation(fields: [chaptersId], references: [id])
+  chaptersId         Int?
 }
 
 model Comments {

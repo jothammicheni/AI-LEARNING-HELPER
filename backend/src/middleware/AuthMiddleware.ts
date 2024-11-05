@@ -4,44 +4,44 @@ import { Users } from "@prisma/client";
 import { activeUser } from "../utils/getLoggedInUser";
 import { verifyToken } from "../utils/utils";
 
-interface CustomRequest extends Request {
-  user?: Users;
-}
+// interface CustomRequest extends Request {
+//   user?: Users;
+// }
 
-const protect = async (req: CustomRequest, res: Response, next: NextFunction) => {
+const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { token } = req.cookies
+      const { token } = req.cookies;
 
-    if (!token) {
-      res.status(403).json({ error: "Token is required, Login first" });
-      return;
-    }
+      if (!token) {
+          res.status(403).json({ error: "Token is required, Login first" });
+          return;
+      }
 
-    const userData = verifyToken(token);
-    if (!userData) {
-      res.status(403).json({ message: 'Invalid  token' });
-      return
-    }
+      const userData = verifyToken(token);
+      if (!userData) {
+          res.status(403).json({ message: 'Invalid token' });
+          return;
+      }
 
-    const userId = userData.id as number;
+      const userId = userData.id as number;
 
-    const user = await prisma.users.findUnique({
-      where: { userId: userId },
-    });
+      const user = await prisma.users.findUnique({
+          where: { userId: userId },
+      });
 
-    if (!user) {
-      res.status(404).json({ message: "User not found" });
-      return;
-    }
+      if (!user) {
+          res.status(404).json({ message: "User not found" });
+          return;
+      }
 
-    req.user = user;
-    next();
+      req.user = user; // Ensure the user matches the CustomRequest type
+      next();
   } catch (error) {
-    console.error('Token verification error:', error);
-    res.status(401).json({
-      error: "Invalid token"
-    });
-    return
+      console.error('Token verification error:', error);
+      res.status(401).json({
+          error: "Invalid token"
+      });
+      return;
   }
 };
 
