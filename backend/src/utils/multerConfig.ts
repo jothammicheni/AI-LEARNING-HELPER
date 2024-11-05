@@ -7,14 +7,12 @@ import prisma from '../config/database';
 // Define storage for the cover images
 const courseCoverStorage = multer.diskStorage({
   destination: (req: Request, file, cb) => {
-    const courseTitle = req.body.title.replace(/\s+/g, '_'); // Replace spaces with underscores for folder names
+    const courseTitle = req.body.title.replace(/\s+/g, '_'); 
     const dir = path.join(__dirname, '../views/courseCovers',courseTitle);
 
-    // Create the course title directory if it doesn't exist
     fs.mkdirSync(dir, { recursive: true });
 
-    cb(null, dir); // Set the upload path to the course title directory
-  },
+    cb(null, dir);   },
   filename: (req: Request, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname)); // Store with a unique name
@@ -24,52 +22,46 @@ const courseCoverStorage = multer.diskStorage({
 const updateCoursecover = multer.diskStorage({ 
   
       destination: (req, file, cb) => {
-          const courseTitle = req.body.title.replace(/\s+/g, '_'); // Replace spaces with underscores for folder names
+          const courseTitle = req.body.title.replace(/\s+/g, '_'); 
           const dir = path.join(__dirname, '../views/courseCovers', courseTitle);
 
-          // Delete existing files in the course title directory if it exists
           if (fs.existsSync(dir)) {
               fs.readdirSync(dir).forEach(file => {
                   const filePath = path.join(dir, file);
-                  fs.unlinkSync(filePath); // Delete each file in the directory
+                  fs.unlinkSync(filePath);
               });
           } else {
-              // Create the course title directory if it doesn't exist
+             
               fs.mkdirSync(dir, { recursive: true });
           }
 
-          cb(null, dir); // Set the upload path to the course title directory
+          cb(null, dir); 
       },
       filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-          cb(null, uniqueSuffix + path.extname(file.originalname)); // Store with a unique name
+          cb(null, uniqueSuffix + path.extname(file.originalname)); 
       }
   })
 
 
 
-
-// Define storage for chapter files
 const chapterFilesStorage = multer.diskStorage({
   destination: async (req: Request, file, cb) => {
     try {
       const { courseId} = req.body;
 
-      // Ensure courseId is provided
       if (!courseId) {
         return new Error('Course ID is required')
       }
 
-       // Convert courseId to an integer
        const parsedCourseId = parseInt(courseId, 10);
        if (isNaN(parsedCourseId)) {
          new Error('Invalid Course ID')
        }
  
-       // Fetch the course from the database using the correct format
        const course = await prisma.courses.findFirst({
          where: {
-           id: parsedCourseId // Use the parsed integer value
+           id: parsedCourseId 
          }
        });
 
@@ -78,13 +70,12 @@ const chapterFilesStorage = multer.diskStorage({
         return new Error('Course not found')
       }
 
-      const courseTitle = course.title.replace(/\s+/g, '_'); // Replace spaces with underscores for folder names
-      const dir = path.join(__dirname, '../views/chapterFiles', courseTitle); // Set the upload path
+      const courseTitle = course.title.replace(/\s+/g, '_'); 
+      const dir = path.join(__dirname, '../views/chapterFiles', courseTitle); 
 
-      // Create the course title directory if it doesn't exist
       fs.mkdirSync(dir, { recursive: true });
 
-      cb(null, dir); // Set the upload path to the course title directory
+      cb(null, dir);
     } catch (error) {
       console.error('Error in destination callback:', error);
       return
@@ -98,9 +89,7 @@ const chapterFilesStorage = multer.diskStorage({
 });
 
 
-// Initialize multer for course covers
 const upload = multer({ storage: courseCoverStorage });
-// Initialize multer for chapter files
 const uploadChapter = multer({ storage: chapterFilesStorage }).single('contentPath');
 
 const updateCourseCover = multer({ storage: updateCoursecover });

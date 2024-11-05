@@ -12,7 +12,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { chapterRoutes } from './routes/chapterRoutes';
 import { quizRouter } from './routes/quizRouter';
-import './utils/passport'; // Import passport configuration
+import './utils/passport'; 
 import { googleAuthRoutes } from './routes/googleAuthRoutes';
 import { progressRouter } from './routes/progressRouter';
 
@@ -28,7 +28,6 @@ app.use(session({ secret: process.env.SESSION_SECRET || 'secret', resave: false,
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Logging middleware
 app.use((req: Request, res: Response, next) => {
     console.log(`${req.method} ${req.url}`);
     next();

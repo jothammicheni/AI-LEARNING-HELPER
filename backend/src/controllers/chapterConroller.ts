@@ -10,19 +10,16 @@ const addCourseChapter = async (req: Request, res: Response) => {
     try {
         const { courseId, title } = req.body;
 
-        // Validate file upload
         if (!req.file) {
             res.status(400).send("Cover image is required");
             return
         }
 
-        // Check if courseId is provided
         if (!courseId) {
             res.status(400).send('Course ID is required');
             return
         }
 
-        // Convert courseId to an integer
         const parsedCourseId = parseInt(courseId, 10);
         if (isNaN(parsedCourseId)) {
             res.status(400).send('Invalid Course ID');
@@ -31,7 +28,6 @@ const addCourseChapter = async (req: Request, res: Response) => {
 
         console.log(typeof parsedCourseId)
 
-        // Check if the chapter title already exists for the same course
         const titleExists = await prisma.chapters.findFirst({
             where: {
                 title: title,
@@ -53,13 +49,11 @@ const addCourseChapter = async (req: Request, res: Response) => {
         }
 
 
-        // Construct contentPath
         const contentPath = path.join('/chapterFiles', courseExists.title.replace(/\s+/g, "_"), req.file.filename);
 
-        // Create new chapter
         const newChapter = await prisma.chapters.create({
             data: {
-                courseId: parsedCourseId, // Use parsedCourseId here
+                courseId: parsedCourseId,
                 title,
                 contentPath
             },
@@ -72,7 +66,7 @@ const addCourseChapter = async (req: Request, res: Response) => {
         return
 
     } catch (error) {
-        console.error("Error adding chapter:", error); // Log the full error for debugging
+        console.error("Error adding chapter:", error);
         if (error instanceof PrismaClientValidationError) {
             res.status(400).json({ message: "Validation error", details: error.message });
             return
@@ -107,19 +101,16 @@ const downloadChapterFile = async (req: Request, res: Response) => {
             return
         }
 
-        // Construct the file path
         const filePath = path.join(__dirname, '../views', chapter.contentPath);
         console.log('Full file path:', filePath);
         console.log('Current working directory:', process.cwd());
 
-        // Check if the file exists
         if (!fs.existsSync(filePath)) {
             console.error('File not found:', filePath);
             res.status(404).send('File not found');
             return
         }
 
-        // Download the file
         res.download(filePath, (downloadErr) => {
             if (downloadErr) {
                 console.error('Error downloading the file:', downloadErr);
@@ -135,6 +126,7 @@ const downloadChapterFile = async (req: Request, res: Response) => {
     }
 };
 
+//change files to audio
 const changeFilesToAudio = async (req: Request, res: Response) => {
     try {
         const { chapterId } = req.params;

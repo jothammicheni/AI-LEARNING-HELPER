@@ -6,7 +6,6 @@ const CreateProgress = async (req: Request, res: Response) => {
    try {
        const { courseId } = req.params;
 
-       // Check if the course exists
        const courseExists = await prisma.courses.findUnique({
            where: { id: Number(courseId) },
        });
@@ -16,7 +15,6 @@ const CreateProgress = async (req: Request, res: Response) => {
            return;
        }
 
-       // Get all chapters in the course
        const allChapters = await prisma.chapters.findMany({
            where: { courseId: Number(courseId) },
        });
@@ -26,15 +24,14 @@ const CreateProgress = async (req: Request, res: Response) => {
            return;
        }
 
-       // Calculate completed chapters
+       
        const completedChapters = await prisma.chapters.count({
            where: {
                courseId: Number(courseId),
-               isCompleted: true, // Assuming there's an `isCompleted` field in `Chapters` model
+               isCompleted: true, 
            },
        });
 
-       // Calculate progress percentage
        const progressPercentage = (completedChapters / allChapters.length) * 100;
 
 
@@ -44,21 +41,19 @@ const CreateProgress = async (req: Request, res: Response) => {
            return;        
        }
 
-       // Delete any existing progress records associated with this courseId for the user
        await prisma.progress.deleteMany({
            where: {
                courseId: Number(courseId),
-               usersUserId: user.userId, // Ensure this targets the correct user's progress
+               usersUserId: user.userId,
            },
        });
 
-       // Create a new progress record for the user
        const progress = await prisma.progress.create({
            data: {
                courseId: Number(courseId),
                progressPercentage: progressPercentage,
                lastAccessed: new Date(),
-               usersUserId: user.userId || null, // Adjust based on actual data structure
+               usersUserId: user.userId || null, 
                chaptersId: req.body.chaptersId || null,
            },
        });

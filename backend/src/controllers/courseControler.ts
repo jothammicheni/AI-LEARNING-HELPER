@@ -1,8 +1,8 @@
 // courseController.ts
 
 import { NextFunction, Request, Response } from "express";
-import prisma from "../config/database"; // Adjust the import path as necessary
-import {upload,updateCourseCover } from "../utils/multerConfig"; // Adjust the import path
+import prisma from "../config/database"; 
+import {upload,updateCourseCover } from "../utils/multerConfig"; 
 import fs from 'fs';
 import path from 'path';
 import { activeUser } from "../utils/getLoggedInUser";
@@ -10,7 +10,6 @@ import { validateCourseInput } from "../middleware/validators";
 
 const uploadCover = upload.single('coverImage'); 
 const updateCover = updateCourseCover.single('coverImage'); 
-// Add a new course with cover image
 const addCourses = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { title, description } = req.body;
@@ -42,13 +41,12 @@ const addCourses = async (req: Request, res: Response,next:NextFunction) => {
             return;        
         }
 
-        // Create the course with the tutorId
         const newCourse = await prisma.courses.create({
             data: {
                 title,
                 description,
                 coverPath,
-                tutorId: user.userId,  // Ensure tutorId is a number
+                tutorId: user.userId,  
             },
         });
 
@@ -118,7 +116,6 @@ const deleteCourse = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
-        // Find the course to get the coverPath
         const course = await prisma.courses.findUnique({
             where: { id: parseInt(id, 10) },
         });
@@ -128,16 +125,13 @@ const deleteCourse = async (req: Request, res: Response) => {
             return;
         }
 
-        // Extract the course title from the course data
-        const courseTitle = course.title.replace(/\s+/g, '_'); // Replace spaces with underscores
-        const courseDirPath = path.join(__dirname, '../views/courseCovers', courseTitle); // Construct the path to the course folder
+        const courseTitle = course.title.replace(/\s+/g, '_'); 
+        const courseDirPath = path.join(__dirname, '../views/courseCovers', courseTitle); 
 
-        // Delete the course from the database
         await prisma.courses.delete({
             where: { id: parseInt(id, 10) },
         });
 
-        // Delete the course directory and its contents
         fs.rm(courseDirPath, { recursive: true, force: true }, (err) => {
             if (err) {
                 console.error(err);
@@ -153,37 +147,34 @@ const deleteCourse = async (req: Request, res: Response) => {
 };
 
 const updateCourse = async (req: Request, res: Response) => {
-    const { courseId } = req.params; // Extract course ID from URL parameters
+    const { courseId } = req.params; 
     const {
         title,
         description,
         coverPath,
         tutorId,
-    } = req.body; // Destructure fields from request body
+    } = req.body; 
 
-    console.log('Request Body:', req.body); // Debugging output
-    console.log('Course ID:', courseId); // Debugging output
+    console.log('Request Body:', req.body); 
+    console.log('Course ID:', courseId); 
 
     try {
-        // Fetch the existing course to preserve unchanged fields
         const existingCourse = await prisma.courses.findUnique({
             where: { id: Number(courseId) },
         });
 
-        // If the course does not exist, return a 404 error
         if (!existingCourse) {
            res.status(404).json({ message: 'Course not found' });
            return 
         }
 
-        console.log('Existing Course:', existingCourse); // Debugging output
+        console.log('Existing Course:', existingCourse); 
 
         if (!req.file) {
             res.status(400).send("Cover image is required");
             return;        
         }
         const coverPath = path.join('/courseCovers', title.replace(/\s+/g, "_"), req.file.filename);
-        // Prepare the update data object, only including changed fields
         const updateData: any = {};
 
         if (title && title !== existingCourse.title) {
@@ -199,21 +190,18 @@ const updateCourse = async (req: Request, res: Response) => {
             updateData.tutorId = tutorId;
         }
 
-        // If no fields have changed, return a message
         if (Object.keys(updateData).length === 0) {
             res.status(400).json({ message: 'No fields to update' });
             return
         }
 
-        console.log('Update Data:', updateData); // Debugging output
+        console.log('Update Data:', updateData); 
 
-        // Update the course in the database
         const updatedCourse = await prisma.courses.update({
             where: { id: Number(courseId) },
             data: updateData,
         });
 
-        // Return the updated course
         res.status(200).json(updatedCourse);
     } catch (error) {
         console.error(error);

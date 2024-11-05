@@ -1,6 +1,6 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { generateToken, generateRefreshToken } from './utils'; // Adjust according to your utility functions
+import { generateToken, generateRefreshToken } from './utils'; 
 import prisma from '../config/database';
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -15,12 +15,10 @@ passport.use(new GoogleStrategy({
     callbackURL: "http://localhost:5007/auth/google/callback"
 }, async (accessToken:string, refreshToken:string, profile:any, done:Function) => {
     try {
-        const { email, name } = profile._json; // Get user info from Google profile
+        const { email, name } = profile._json; 
         console.log(profile._json)
-        // Check if user exists in your database
         let user = await prisma.users.findUnique({ where: { email } });
         
-        // If not, create a new user
         if (!user) {
             user = await prisma.users.create({
                 data: {
@@ -37,7 +35,7 @@ passport.use(new GoogleStrategy({
         const newRefreshToken = generateRefreshToken(user);
         const token = generateToken(user);
         console.log('loggin successful')
-        // Return user and tokens
+        
         done(null, { user, token, newRefreshToken });
     } catch (error) {
         done(error, null);

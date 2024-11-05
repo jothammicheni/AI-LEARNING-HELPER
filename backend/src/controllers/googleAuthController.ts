@@ -16,29 +16,25 @@ const googleAuthCallback = async (req:Request, res: Response) => {
             return 
         }
 
-        // If user is found, proceed with setting cookies or any other logic
         const token=generateToken(user)
         const newRefreshToken =generateRefreshToken(user)
-        // Set the access token in a cookie
         res.cookie('token', token, {
             path: '/',
             httpOnly: true,
-            expires: new Date(Date.now() + 1000 * 60 * 15), // Expires in 15 minutes
+            expires: new Date(Date.now() + 1000 * 60 * 15), 
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production',
         });
 
-        // Set the refresh token in a cookie
         res.cookie('refreshToken', newRefreshToken, {
             path: '/',
             httpOnly: true,
-            expires: new Date(Date.now() + 1000 * 86400 * 7), // Expires in 7 days
+            expires: new Date(Date.now() + 1000 * 86400 * 7), 
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production',
         });
 
-        // Send user details excluding sensitive information
-        const { name, email,role } = user; // Adjust based on your user model
+        const { name, email,role } = user; 
         res.status(200).json({
             message: 'User logged in with Google',
             user: {

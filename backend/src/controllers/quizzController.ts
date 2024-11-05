@@ -42,7 +42,7 @@ const updateQuiz = async (req: Request, res: Response) => {
   
     try {
       const quiz = await prisma.quizzes.update({
-        where: { id: Number(quizId) }, // Convert quizId to a number
+        where: { id: Number(quizId) }, 
         data: {
           question,
           answer,
@@ -55,7 +55,7 @@ const updateQuiz = async (req: Request, res: Response) => {
       });
     } catch (error) {
       res.status(500).json({
-        message: error // Send error message as response
+        message: error 
       });
       return
     }

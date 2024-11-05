@@ -16,8 +16,6 @@ const RegisterUser = async (req: Request, res: Response) => {
             return 
    }
 
-
-    // Check if user already exists
     const existingUser = await prisma.users.findUnique({
       where: { email },
     });
@@ -31,7 +29,6 @@ const RegisterUser = async (req: Request, res: Response) => {
 
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
-    //register user
     const user = await prisma.users.create({
       data: {
         name,
@@ -42,7 +39,7 @@ const RegisterUser = async (req: Request, res: Response) => {
 
     const token = generateToken(user);
 
-    // Set the token in a cookie
+    
     res.cookie('token', token, {
       path: '/',
       httpOnly: true,
@@ -66,7 +63,6 @@ const loginUser = async (req: Request, res: Response,next:NextFunction)=> {
   try {
     const { email, password } = req.body;
 
-    // Validate input 
     const validationError = validateLoginInputs(email, password);
         if (validationError) {
             res.status(400).json({ message: validationError });
@@ -87,29 +83,26 @@ const loginUser = async (req: Request, res: Response,next:NextFunction)=> {
       return;
     }
 
-    // Generate JWT tokens
     const refreshToken = generateRefreshToken(user);
     const token = generateToken(user);
 
-    // Set the access token in a cookie
+    
     res.cookie('token', token, {
       path: '/',
       httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 60* 2), // Expires in 15 minutes
+      expires: new Date(Date.now() + 1000 * 60* 2), 
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
 
-    // Set the refresh token in a cookie
     res.cookie('refreshToken', refreshToken, {
       path: '/',
       httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 86400 * 7), // Expires in 7 days
+      expires: new Date(Date.now() + 1000 * 86400 * 7), // 7 days
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
 
-    // Send user details excluding the password
     const { name, email: userEmail, isVerified, role } = user;
     res.status(200).json({
       message: 'User Logged in',
@@ -141,7 +134,6 @@ const logoutUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Clear the token by setting the cookie's expiration date in the past
     res.cookie("token", "", {
       path: "/",
       httpOnly: true,
@@ -164,7 +156,6 @@ const logoutUser = async (req: Request, res: Response): Promise<void> => {
 
 const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Fetch all users, excluding sensitive fields (e.g., password)
     const users = await prisma.users.findMany({
       select: {
         userId: true,
@@ -195,16 +186,15 @@ const refreshToken = async (req: Request, res: Response): Promise<void> => {
       return 
     }
 
-    // Verify the refresh token
+    // Verify  refresh token
     const userData = verifyRefreshToken(refreshToken); 
     if (!userData) {
       res.status(403).json({ message: 'Invalid refresh token' });
       return 
     }
 
-    // Check if the user exists in the database 
     const user = await prisma.users.findUnique({
-      where: { userId: userData.id }, // Assuming userData contains the user ID
+      where: { userId: userData.id }, 
     });
 
     if (!user) {
@@ -212,20 +202,17 @@ const refreshToken = async (req: Request, res: Response): Promise<void> => {
       return 
     }
 
-    // Generate new access token and optionally a new refresh token
     const token = generateToken(user);
     const newRefreshToken = generateRefreshToken(user);
 
-    // Set the new refresh token in a cookie
     res.cookie('refreshToken', newRefreshToken, {
       path: '/',
       httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 86400 * 7), // Expires in 7 days
+      expires: new Date(Date.now() + 1000 * 86400 * 7), 
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
 
-    // Set the new access token in a cookie
     res.cookie('token', token, {
       path: '/',
       httpOnly: true,
@@ -234,7 +221,6 @@ const refreshToken = async (req: Request, res: Response): Promise<void> => {
       secure: process.env.NODE_ENV === 'production',
     });
 
-    // Send the new access token back to the client
     res.status(200).json({
       accessToken: token,
     });
