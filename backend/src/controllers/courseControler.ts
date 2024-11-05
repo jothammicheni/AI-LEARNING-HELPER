@@ -1,18 +1,31 @@
 // courseController.ts
 
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import prisma from "../config/database"; // Adjust the import path as necessary
 import {upload,updateCourseCover } from "../utils/multerConfig"; // Adjust the import path
 import fs from 'fs';
 import path from 'path';
 import { activeUser } from "../utils/getLoggedInUser";
+import { validateCourseInput } from "../middleware/validators";
 
 const uploadCover = upload.single('coverImage'); 
 const updateCover = updateCourseCover.single('coverImage'); 
 // Add a new course with cover image
-const addCourses = async (req: Request, res: Response) => {
+const addCourses = async (req: Request, res: Response,next:NextFunction) => {
     try {
         const { title, description } = req.body;
+        if (!req.file) {
+            res.status(400).send("Cover image is required");
+            return;        
+        }
+        const coverPath = path.join('/courseCovers', title.replace(/\s+/g, "_"), req.file.filename);
+       
+        //validate the body inputs
+      const validationError= validateCourseInput(title,description,coverPath)
+      if(validationError) {
+        res.status(400).json({message:validationError})
+        return
+      }
 
         const existingCourse = await prisma.courses.findFirst({
             where: { title },
@@ -21,13 +34,6 @@ const addCourses = async (req: Request, res: Response) => {
             res.status(400).json({ message: "Course with the same title already exists" });
             return;
         }
-
-        if (!req.file) {
-            res.status(400).send("Cover image is required");
-            return;        
-        }
-
-        const coverPath = path.join('/courseCovers', title.replace(/\s+/g, "_"), req.file.filename);
 
         // Get logged-in user
         const user = await activeUser(req, res);

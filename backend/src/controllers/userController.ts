@@ -1,11 +1,21 @@
-import { Response, Request } from "express";
+import { Response, Request,NextFunction } from "express";
 import prisma from "../config/database";
 import bcrypt, { hash } from "bcrypt";
-import { generateToken } from "../utils/utils";
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { generateRefreshToken, generateToken, verifyRefreshToken } from "../utils/utils";
+import { validateLoginInputs, validateRegisterInputs } from "../middleware/validators";
 
 const RegisterUser = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
+
+   const validationError= validateRegisterInputs(name, email, password);
+   if(validationError){
+    res.status(400).json({ message: validationError });
+            return 
+   }
+
 
     // Check if user already exists
     const existingUser = await prisma.users.findUnique({
@@ -39,7 +49,7 @@ const RegisterUser = async (req: Request, res: Response) => {
       httpOnly: true,
       expires: new Date(Date.now() + 1000 * 86400), // + 1 day
       sameSite: false,
-      secure: process.env.NODE_ENV === 'production', // Use secure cookie in production
+      secure: process.env.NODE_ENV === 'production', 
 
     });
     const { password: _, ...userData } = user;
@@ -53,67 +63,72 @@ const RegisterUser = async (req: Request, res: Response) => {
   }
 }
 
-const loginUser = async (req: Request, res: Response): Promise<void> => {
+const loginUser = async (req: Request, res: Response,next:NextFunction)=> {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      res.status(400).json({
-        message: 'Email and password are required'
-      });
-      return
-    }
-
-    const user = await prisma.users.findUnique({
-      where: { email },
-    });
+    // Validate input 
+    const validationError = validateLoginInputs(email, password);
+        if (validationError) {
+            res.status(400).json({ message: validationError });
+            return 
+        }
+    
+   
+    const user = await prisma.users.findUnique({ where: { email } });
 
     if (!user) {
-      res.status(404).json({
-        message: 'User not found'
-      });
-      return
+      res.status(404).json({ message: 'User not found' });
+      return;
     }
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
-      res.status(401).json({ message: "Wrong credentials" });
-      return
+      res.status(401).json({ message: 'Wrong credentials' });
+      return;
     }
 
-    // Generate JWT token
+    // Generate JWT tokens
+    const refreshToken = generateRefreshToken(user);
     const token = generateToken(user);
 
-    // Set the token in a cookie
+    // Set the access token in a cookie
     res.cookie('token', token, {
       path: '/',
       httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 86400), // Expires in 1 day
+      expires: new Date(Date.now() + 1000 * 60* 2), // Expires in 15 minutes
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production', // Use secure cookie in production
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    // Set the refresh token in a cookie
+    res.cookie('refreshToken', refreshToken, {
+      path: '/',
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400 * 7), // Expires in 7 days
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
     });
 
     // Send user details excluding the password
     const { name, email: userEmail, isVerified, role } = user;
     res.status(200).json({
-      message: "User Logged in",
+      message: 'User Logged in',
       user: {
         name,
         email: userEmail,
         isVerified,
         role,
-        token
       },
     });
 
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({
-      message: 'Internal server error'
-    });
-    return
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+
 
 
 const logoutUser = async (req: Request, res: Response): Promise<void> => {
@@ -172,7 +187,65 @@ const getAllUsers = async (req: Request, res: Response): Promise<void> => {
     return
   }
 };
+const refreshToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { refreshToken } = req.cookies; // Get the refresh token from cookies
+
+    if (!refreshToken) {
+      res.status(401).json({ message: 'Refresh token is required' });
+      return 
+    }
+
+    // Verify the refresh token
+    const userData = verifyRefreshToken(refreshToken); 
+    if (!userData) {
+      res.status(403).json({ message: 'Invalid refresh token' });
+      return 
+    }
+
+    // Check if the user exists in the database 
+    const user = await prisma.users.findUnique({
+      where: { userId: userData.id }, // Assuming userData contains the user ID
+    });
+
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return 
+    }
+
+    // Generate new access token and optionally a new refresh token
+    const token = generateToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    // Set the new refresh token in a cookie
+    res.cookie('refreshToken', newRefreshToken, {
+      path: '/',
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400 * 7), // Expires in 7 days
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    // Set the new access token in a cookie
+    res.cookie('token', token, {
+      path: '/',
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 60 * 15), // Expires in 15 minutes
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    // Send the new access token back to the client
+    res.status(200).json({
+      accessToken: token,
+    });
+
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+    return
+  }
+};
 
 
-
-export { RegisterUser, loginUser, getAllUsers, logoutUser };
+export { RegisterUser, loginUser, getAllUsers, logoutUser,refreshToken  };
