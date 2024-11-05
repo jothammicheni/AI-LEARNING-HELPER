@@ -8,6 +8,7 @@ import { userRoutes } from "./routes/userRoutes";
 import { courseRoutes } from './routes/courseRoutes';
 import dotenv from 'dotenv';
 import path from 'path';
+import { chapterRoutes } from './routes/chapterRoutes';
 
 dotenv.config();
 
@@ -29,7 +30,10 @@ app.use((req: Request, res: Response, next) => {
 // Routes
 app.use('/users', userRoutes);
 app.use('/api/course', courseRoutes);
+app.use('/api/chapter', chapterRoutes);
 app.use('/courseCovers', express.static(path.join(__dirname, 'views/courseCovers')));
+app.use('/chapterFiles', express.static(path.join(__dirname, 'views/chapterFiles')));
+
 
 // Error handling middleware
 app.use(errorHandler);

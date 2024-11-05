@@ -14,7 +14,6 @@ const addCourses = async (req: Request, res: Response) => {
     try {
         const { title, description } = req.body;
 
-        // Avoid courses with the same title
         const existingCourse = await prisma.courses.findFirst({
             where: { title },
         });
@@ -23,13 +22,11 @@ const addCourses = async (req: Request, res: Response) => {
             return;
         }
 
-        // Check if file is uploaded
         if (!req.file) {
             res.status(400).send("Cover image is required");
             return;        
         }
 
-        // Construct coverPath
         const coverPath = path.join('/courseCovers', title.replace(/\s+/g, "_"), req.file.filename);
 
         // Get logged-in user
