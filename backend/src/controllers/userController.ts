@@ -40,7 +40,6 @@ const RegisterUser = async (req: Request, res: Response) => {
       },
     });
 
-    // Generate a token after user creation
     const token = generateToken(user);
 
     // Set the token in a cookie
