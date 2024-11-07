@@ -5,9 +5,11 @@ import prisma from '../config/database';
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
-
+const tokenSecret = process.env.TOKEN_SECRET;
+console.log(tokenSecret )
 if (!googleClientId || !googleClientSecret) {
     throw new Error('Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment variables.');
+    
 }
 passport.use(new GoogleStrategy({
     clientID: googleClientId,

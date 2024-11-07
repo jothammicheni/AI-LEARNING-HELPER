@@ -5,8 +5,11 @@ import { addCourses,
     updateCover,
     getCourses,
     getCourseById,
-    deleteCourse,
-    updateCourse  } from '../controllers/courseControler'; 
+    deleteCourse,    
+    updateCourse,  
+    enrollUserToACourse,
+    deleteEnrollment,
+    getEnrolledCourses} from '../controllers/courseControler'; 
 const router = express.Router();
 
 // Route to add a course with file upload
@@ -15,5 +18,11 @@ router.get("/getCourses",protect,getCourses);
 router.get('/:id',protect,getCourseById);
 router.delete('/:id',protect,isTutor,deleteCourse ); 
 router.patch('/update/:courseId',protect,isTutor,updateCourse );
+router.post('/enrollToCourse/:courseId',protect,enrollUserToACourse);
+router.get('/enrollToCourse/:userId',protect,getEnrolledCourses);
+router.delete('/deleteEnrollment/:courseId',protect,deleteEnrollment);
+
+
+
 export {router as courseRoutes}; 
   

@@ -6,7 +6,7 @@ import { verifyToken } from "../utils/utils";
 
 // interface CustomRequest extends Request {
 //   user?: Users;
-// }
+// } 
 
 const protect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
