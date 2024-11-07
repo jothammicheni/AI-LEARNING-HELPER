@@ -15,6 +15,7 @@ import { quizRouter } from './routes/quizRouter';
 import './utils/passport'; 
 import { googleAuthRoutes } from './routes/googleAuthRoutes';
 import { progressRouter } from './routes/progressRouter';
+import { commentsRoutes } from './routes/commentsRoutes';
 
 dotenv.config();
 
@@ -40,12 +41,13 @@ app.use('/api/chapter', chapterRoutes);
 app.use('/api/quizz', quizRouter);
 app.use('/api/auth', googleAuthRoutes); 
 app.use('/api/progress', progressRouter); 
+app.use('/api/comments', commentsRoutes); 
 app.use('/courseCovers', express.static(path.join(__dirname, 'views/courseCovers')));
 app.use('/chapterFiles', express.static(path.join(__dirname, 'views/chapterFiles')));
 
 app.use(errorHandler);
 
-// Health check route
+
 app.get("/", (req: Request, res: Response) => {
     res.status(200).send("Server is running smoothly!");
 });

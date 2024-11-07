@@ -5,7 +5,7 @@ import fs from 'fs';
 import pdfParse from 'pdf-parse';
 import gtts from 'node-gtts';
 import { PrismaClientValidationError } from "@prisma/client/runtime/library";
-
+ 
 const addCourseChapter = async (req: Request, res: Response) => {
     try {
         const { courseId, title } = req.body;
@@ -186,6 +186,28 @@ const changeFilesToAudio = async (req: Request, res: Response) => {
         res.status(500).send('An error occurred while processing your request');
     }
 };
+const isComplete = async (req: Request, res: Response) => {
+    const { chapterId } = req.params;
+
+    try {
+       
+        const chapter = await prisma.chapters.findUnique({
+            where: { id: Number(chapterId) }
+        });
+
+        if (!chapter) {
+            res.status(404).json({ message: 'Chapter not found' });
+            return;
+        }
+
+        const status = chapter.isCompleted ? true : false;
+        
+        res.status(200).json({ status });
+    } catch (error) {
+        console.error("Error checking chapter completion:", error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
 
 
-export { addCourseChapter, downloadChapterFile, changeFilesToAudio }
+export { addCourseChapter, downloadChapterFile, changeFilesToAudio,isComplete  }

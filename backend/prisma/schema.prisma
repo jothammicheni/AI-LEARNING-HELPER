@@ -18,6 +18,8 @@ model Users {
   comments   Comments[]
   courses    Courses[]  @relation("UserCourses")
   progress   Progress[]
+
+  Enrollments Enrollments[]
 }
 
 model Courses {
@@ -36,7 +38,22 @@ model Courses {
   tutor       Users      @relation("UserCourses", fields: [tutorId], references: [userId])
   progress    Progress[]
   quizzes     Quizzes[]
+
+  Enrollments Enrollments[]
 }
+
+model Enrollments {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  courseId  Int
+  enrolledAt DateTime @default(now())
+
+  users      Users    @relation(fields: [userId], references: [userId])
+  course    Courses  @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId]) // Ensures each user can enroll in a course only once
+}
+
 
 model Chapters {
   id          Int        @id @default(autoincrement())
@@ -75,7 +92,7 @@ model Comments {
   id        Int      @id @default(autoincrement())
   courseId  Int
   comment   String
-  userId    Int?
+  userId    Int 
   createdAt DateTime @default(now())
   course    Courses  @relation(fields: [courseId], references: [id])
   user      Users?   @relation(fields: [userId], references: [userId])

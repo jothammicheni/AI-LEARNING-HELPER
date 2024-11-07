@@ -1,30 +1,30 @@
 // courseController.ts
 
 import { NextFunction, Request, Response } from "express";
-import prisma from "../config/database"; 
-import {upload,updateCourseCover } from "../utils/multerConfig"; 
+import prisma from "../config/database";
+import { upload, updateCourseCover } from "../utils/multerConfig";
 import fs from 'fs';
 import path from 'path';
 import { activeUser } from "../utils/getLoggedInUser";
 import { validateCourseInput } from "../middleware/validators";
 
-const uploadCover = upload.single('coverImage'); 
-const updateCover = updateCourseCover.single('coverImage'); 
-const addCourses = async (req: Request, res: Response,next:NextFunction) => {
+const uploadCover = upload.single('coverImage');
+const updateCover = updateCourseCover.single('coverImage');
+const addCourses = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { title, description } = req.body;
         if (!req.file) {
             res.status(400).send("Cover image is required");
-            return;        
+            return;
         }
         const coverPath = path.join('/courseCovers', title.replace(/\s+/g, "_"), req.file.filename);
-       
+
         //validate the body inputs
-      const validationError= validateCourseInput(title,description,coverPath)
-      if(validationError) {
-        res.status(400).json({message:validationError})
-        return
-      }
+        const validationError = validateCourseInput(title, description, coverPath)
+        if (validationError) {
+            res.status(400).json({ message: validationError })
+            return
+        }
 
         const existingCourse = await prisma.courses.findFirst({
             where: { title },
@@ -38,7 +38,7 @@ const addCourses = async (req: Request, res: Response,next:NextFunction) => {
         const user = await activeUser(req, res);
         if (!user) {
             res.status(404).json({ message: "User not found" });
-            return;        
+            return;
         }
 
         const newCourse = await prisma.courses.create({
@@ -46,7 +46,7 @@ const addCourses = async (req: Request, res: Response,next:NextFunction) => {
                 title,
                 description,
                 coverPath,
-                tutorId: user.userId,  
+                tutorId: user.userId,
             },
         });
 
@@ -58,7 +58,7 @@ const addCourses = async (req: Request, res: Response,next:NextFunction) => {
         console.error("Error adding course:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
-};  
+};
 
 // Get all courses
 const getCourses = async (req: Request, res: Response) => {
@@ -67,13 +67,13 @@ const getCourses = async (req: Request, res: Response) => {
             include: {
                 tutor: {
                     select: {
-                        name: true, 
+                        name: true,
                     }
-                }, 
+                },
                 chapters: true,
-                quizzes: true, 
-                comments: true, 
-                progress: true, 
+                quizzes: true,
+                comments: true,
+                progress: true,
             },
         });
 
@@ -85,9 +85,9 @@ const getCourses = async (req: Request, res: Response) => {
 };
 
 // Get course by ID
-const getCourseById = async (req: Request, res: Response) => {   
+const getCourseById = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params; 
+        const { id } = req.params;
         const course = await prisma.courses.findUnique({
             where: { id: parseInt(id, 10) },
             include: {
@@ -125,8 +125,8 @@ const deleteCourse = async (req: Request, res: Response) => {
             return;
         }
 
-        const courseTitle = course.title.replace(/\s+/g, '_'); 
-        const courseDirPath = path.join(__dirname, '../views/courseCovers', courseTitle); 
+        const courseTitle = course.title.replace(/\s+/g, '_');
+        const courseDirPath = path.join(__dirname, '../views/courseCovers', courseTitle);
 
         await prisma.courses.delete({
             where: { id: parseInt(id, 10) },
@@ -147,16 +147,16 @@ const deleteCourse = async (req: Request, res: Response) => {
 };
 
 const updateCourse = async (req: Request, res: Response) => {
-    const { courseId } = req.params; 
+    const { courseId } = req.params;
     const {
         title,
         description,
         coverPath,
         tutorId,
-    } = req.body; 
+    } = req.body;
 
-    console.log('Request Body:', req.body); 
-    console.log('Course ID:', courseId); 
+    console.log('Request Body:', req.body);
+    console.log('Course ID:', courseId);
 
     try {
         const existingCourse = await prisma.courses.findUnique({
@@ -164,15 +164,15 @@ const updateCourse = async (req: Request, res: Response) => {
         });
 
         if (!existingCourse) {
-           res.status(404).json({ message: 'Course not found' });
-           return 
+            res.status(404).json({ message: 'Course not found' });
+            return
         }
 
-        console.log('Existing Course:', existingCourse); 
+        console.log('Existing Course:', existingCourse);
 
         if (!req.file) {
             res.status(400).send("Cover image is required");
-            return;        
+            return;
         }
         const coverPath = path.join('/courseCovers', title.replace(/\s+/g, "_"), req.file.filename);
         const updateData: any = {};
@@ -195,7 +195,7 @@ const updateCourse = async (req: Request, res: Response) => {
             return
         }
 
-        console.log('Update Data:', updateData); 
+        console.log('Update Data:', updateData);
 
         const updatedCourse = await prisma.courses.update({
             where: { id: Number(courseId) },
@@ -205,15 +205,139 @@ const updateCourse = async (req: Request, res: Response) => {
         res.status(200).json(updatedCourse);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server error'});
-        return 
+        res.status(500).json({ message: 'Server error' });
+        return
+    }
+};
+// Enroll User in a Course
+const enrollUserToACourse = async (req: Request, res: Response) => {
+    const { courseId } = req.params
+
+    try {
+    const courseExist=await prisma.courses.findFirst({
+        where:{id:Number(courseId)}
+    })
+    if(!courseExist){
+        res.status(404).json({
+            message:'course not found'
+        })
+    }
+
+    const user = await activeUser(req, res)
+        if (!user) {
+            res.status(404).json({ mesage: 'user not found' })
+            return
+        }
+
+
+        const existingEnrollment = await prisma.enrollments.findUnique({
+            where: {
+                userId_courseId: { userId:Number(user.userId), courseId: Number(courseId) }, 
+            },
+        });
+
+        if (existingEnrollment) {
+            res.status(400).json({ message: 'User is already enrolled in this course' });
+            return
+        }
+
+        
+
+        const enrollment = await prisma.enrollments.create({
+            data: {
+                userId: Number(user.userId),
+                courseId: Number(courseId),
+            },
+        });
+
+        res.status(201).json({ message: 'User successfully enrolled in the course', enrollment });
+    } catch (error) {
+        console.error('Error enrolling user:', error);
+        res.status(500).json({ message: 'Failed to enroll user in the course' });
+        return
     }
 };
 
-export { addCourses,
-     getCourses,
-      getCourseById,
-       deleteCourse, 
-       updateCourse,
-       uploadCover,
-    updateCover };
+const getEnrolledCourses = async (req: Request, res: Response) => {
+    const{userId}=req.params  
+
+
+    try {
+    
+      const enrolledCourses = await prisma.enrollments.findMany({
+        where: {
+          userId: Number(userId),
+        },
+        include: {
+          course: true,
+        },
+      });
+  
+      
+      const courses = enrolledCourses.map(enrollment => enrollment.course);
+  
+      res.status(200).json({ courses });
+    } catch (error) {
+      console.error('Error fetching enrolled courses:', error);
+      res.status(500).json({ message: 'Failed to retrieve enrolled courses' });
+    }
+  };
+
+  const deleteEnrollment = async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+
+    try {
+        const courseExist = await prisma.courses.findFirst({
+            where: { id: Number(courseId) },
+        });
+
+        if (!courseExist) {
+            res.status(404).json({ message: 'Course not found' });
+            return;
+        }
+
+        const user = await activeUser(req, res);
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        const existingEnrollment = await prisma.enrollments.findUnique({
+            where: {
+                userId_courseId: { userId: Number(user.userId), courseId: Number(courseId) },
+            },
+        });
+
+        if (!existingEnrollment) {
+            res.status(404).json({ message: 'Enrollment not found for this course' });
+            return;
+        }
+
+        await prisma.enrollments.delete({
+            where: {
+                userId_courseId: { userId: Number(user.userId), courseId: Number(courseId) },
+            },
+        });
+
+        res.status(200).json({ message: 'Enrollment deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting enrollment:', error);
+        res.status(500).json({ message: 'Failed to delete enrollment' });
+    }
+};
+
+
+
+
+export {
+    addCourses,
+    getCourses,
+    getCourseById,
+    deleteCourse,
+    updateCourse,
+    uploadCover,
+    updateCover,
+    enrollUserToACourse,
+    getEnrolledCourses,
+    deleteEnrollment
+};

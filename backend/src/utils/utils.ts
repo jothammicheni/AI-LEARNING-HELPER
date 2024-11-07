@@ -14,7 +14,7 @@ const generateToken = (user: User): string => {
     throw new Error("TOKEN_SECRET is not defined");
   }
 
-  return jwt.sign(payload, tokenSecret, { expiresIn: '2m' });
+  return jwt.sign(payload, tokenSecret, { expiresIn: '30m' });
 };
 
 const generateRefreshToken = (user: User): string => {
@@ -28,6 +28,7 @@ const generateRefreshToken = (user: User): string => {
 
   return jwt.sign(payload, refreshToken, { expiresIn: '7d' });
 };
+
 
 const REFRESH_TOKEN= process.env.REFRESH_TOKEN|| 'Etyyqwetqw7652764y897863h78'; // Use a secure secret
 

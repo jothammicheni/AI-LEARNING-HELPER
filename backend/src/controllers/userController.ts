@@ -1,20 +1,20 @@
-import { Response, Request,NextFunction } from "express";
+import { Response, Request, NextFunction } from "express";
 import prisma from "../config/database";
 import bcrypt, { hash } from "bcrypt";
-import passport from 'passport';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+
 import { generateRefreshToken, generateToken, verifyRefreshToken } from "../utils/utils";
 import { validateLoginInputs, validateRegisterInputs } from "../middleware/validators";
+import { activeUser } from "../utils/getLoggedInUser";
 
 const RegisterUser = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
 
-   const validationError= validateRegisterInputs(name, email, password);
-   if(validationError){
-    res.status(400).json({ message: validationError });
-            return 
-   }
+    const validationError = validateRegisterInputs(name, email, password);
+    if (validationError) {
+      res.status(400).json({ message: validationError });
+      return
+    }
 
     const existingUser = await prisma.users.findUnique({
       where: { email },
@@ -39,13 +39,13 @@ const RegisterUser = async (req: Request, res: Response) => {
 
     const token = generateToken(user);
 
-    
+
     res.cookie('token', token, {
       path: '/',
       httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 86400), // + 1 day
+      expires: new Date(Date.now() + 1000 *60*5), // + 1 day
       sameSite: false,
-      secure: process.env.NODE_ENV === 'production', 
+      secure: process.env.NODE_ENV === 'production',
 
     });
     const { password: _, ...userData } = user;
@@ -59,17 +59,17 @@ const RegisterUser = async (req: Request, res: Response) => {
   }
 }
 
-const loginUser = async (req: Request, res: Response,next:NextFunction)=> {
+const loginUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
 
     const validationError = validateLoginInputs(email, password);
-        if (validationError) {
-            res.status(400).json({ message: validationError });
-            return 
-        }
-    
-   
+    if (validationError) {
+      res.status(400).json({ message: validationError });
+      return
+    }
+
+
     const user = await prisma.users.findUnique({ where: { email } });
 
     if (!user) {
@@ -86,11 +86,11 @@ const loginUser = async (req: Request, res: Response,next:NextFunction)=> {
     const refreshToken = generateRefreshToken(user);
     const token = generateToken(user);
 
-    
+
     res.cookie('token', token, {
       path: '/',
       httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 60* 2), 
+      expires: new Date(Date.now() + 1000 * 60 * 5),
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });
@@ -119,8 +119,66 @@ const loginUser = async (req: Request, res: Response,next:NextFunction)=> {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const user = await prisma.users.findUnique({
+      where: { userId: Number(userId) },
+    });
 
+    if (!user) {
+      res.status(404).json({ message: `User with id ${userId} not found` });
+      return;
+    }
 
+    await prisma.users.delete({
+      where: { userId: Number(userId) },
+    });
+
+    res.status(200).json({ message: `User with id ${userId} has been deleted successfully` });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ error: "Error deleting user" });
+  }
+};
+
+const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { name, email, password } = req.body;
+
+    const user = await prisma.users.findUnique({
+      where: { userId: Number(userId) },
+    });
+
+    if (!user) {
+      res.status(404).json({ message: `User with id ${userId} not found` });
+      return;
+    }
+
+    const updateData: { name?: string; email?: string; password?: string } = {};
+
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (password) {
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(password, saltRounds);
+      updateData.password = passwordHash;
+    }
+
+    // Update the user
+    const updatedUser = await prisma.users.update({
+      where: { userId: Number(userId) },
+      data: updateData,
+    });
+
+    const { password: _, ...userData } = updatedUser;
+    res.status(200).json({ message: "User updated successfully", user: userData });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Error updating user" });
+  }
+};
 
 
 const logoutUser = async (req: Request, res: Response): Promise<void> => {
@@ -153,6 +211,63 @@ const logoutUser = async (req: Request, res: Response): Promise<void> => {
     return
   }
 };
+const loginStatus = async (req: Request, res: Response) => {
+  const { token, refreshToken } = req.cookies;
+  const refreshSecret = process.env.REFRESH_TOKEN;
+try{
+  if (!refreshSecret) {
+    res.status(500).json({ message: 'REFRESH_TOKEN environment variable not found' });
+    return;
+  }
+
+  if (!token && !refreshToken) {
+    res.json(false);
+    return;
+  }
+  if (refreshToken) {
+    const userData = verifyRefreshToken(refreshToken);
+    if (!userData) {
+      res.json(false);
+      return;
+    }
+
+    const user = await prisma.users.findUnique({
+      where: { userId: userData.id },
+    });
+
+    if (!user) {
+      res.json(false);
+      return;
+    }
+
+    const newToken = generateToken(user);
+    const newRefreshToken = generateRefreshToken(user);
+
+    res.cookie('token', newToken, {
+      path: '/',
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 60 * 30),
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
+    res.status(200).json(true);
+    return;
+  }
+
+  if (token) {
+    res.status(200).json(true);
+    return;
+  }
+
+  res.json(false);
+}catch(error){
+  res.status(500)
+  res.json({'server error:':error})
+}
+
+};
+
 
 const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -177,60 +292,33 @@ const getAllUsers = async (req: Request, res: Response): Promise<void> => {
     return
   }
 };
-const refreshToken = async (req: Request, res: Response): Promise<void> => {
+
+const getLoggedInUser = async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.cookies; // Get the refresh token from cookies
-
-    if (!refreshToken) {
-      res.status(401).json({ message: 'Refresh token is required' });
-      return 
-    }
-
-    // Verify  refresh token
-    const userData = verifyRefreshToken(refreshToken); 
-    if (!userData) {
-      res.status(403).json({ message: 'Invalid refresh token' });
-      return 
-    }
-
-    const user = await prisma.users.findUnique({
-      where: { userId: userData.id }, 
-    });
-
+    const user =await activeUser(req, res);
+    console.log('Retrieved user:', user); 
     if (!user) {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'User not found: Login first' });
       return 
     }
 
-    const token = generateToken(user);
-    const newRefreshToken = generateRefreshToken(user);
-
-    res.cookie('refreshToken', newRefreshToken, {
-      path: '/',
-      httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 86400 * 7), 
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
-
-    res.cookie('token', token, {
-      path: '/',
-      httpOnly: true,
-      expires: new Date(Date.now() + 1000 * 60 * 15), // Expires in 15 minutes
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
-
-    res.status(200).json({
-      accessToken: token,
-    });
-
+   res.status(200).json({ user });
+   return 
   } catch (error) {
-    console.error('Refresh token error:', error);
+    console.error('Error retrieving logged-in user:', error);
     res.status(500).json({ message: 'Internal server error' });
-    return
+    return 
   }
 };
 
 
-export { RegisterUser, loginUser, getAllUsers, logoutUser,refreshToken  };
+export {
+  RegisterUser,
+  loginUser,
+  getAllUsers,
+  logoutUser,
+  loginStatus,
+  deleteUser,
+  updateUser,
+  getLoggedInUser
+};
