@@ -1,6 +1,6 @@
 # AI Learning Helper
 
-**AI Learning Helper** is an interactive educational platform designed to enhance the learning experience for users through the integration of AI technologies. This project allows administrators and tutors to manage courses, provides audio translations of course materials, facilitates quiz interactions, and tracks user progress.
+**AI Learning Helper** is an interactive educational platform designed to enhance the learning experience for users through the integration of AI technologies. This project allows administrators and tutors to manage courses, provides audio translations of course materials, facilitates quiz interactions, and tracks user progress
 
 ## Table of Contents
 
