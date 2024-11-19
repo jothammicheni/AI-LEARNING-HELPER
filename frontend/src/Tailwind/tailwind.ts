@@ -1,0 +1,2 @@
+export const textInputStyles="w-full  border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 transition duration-150"
+export const cardStyles="p-4 border-solid border border-indigo-400 rounded-lg"
