@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaSearch } from 'react-icons/fa';
+import ActiveUser from '../../customHook/getLoggedInUser';
+import { User } from '../../interfaces/Types';
 
 interface Course {
   id: number;
@@ -21,7 +23,8 @@ export default function Courses() {
 
   const coursesPerPage = 6;
   const BACKEND_URL = "http://localhost:5007";
-
+  const { user} = ActiveUser();
+  console.log('hello:',user?.role)
   useEffect(() => {
     const fetchCourses = async () => {
       setIsLoading(true);
@@ -71,7 +74,8 @@ export default function Courses() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 relative">
+     <div className='flex max-sm:flex-col'>
+     <div className="mb-6 relative w-full mr-2">
         <input
           type="text"
           placeholder="Search courses..."
@@ -81,6 +85,16 @@ export default function Courses() {
         />
         <FaSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 text-teal-500" />
       </div>
+       
+     { user?.role=='admin'?(
+      <div className='bg-teal-600 h-14 items-center justify-center rounded-md  mb-2 cursor-pointer'>
+         <p className='text-white text-center'>Manage Courses</p>
+      </div>
+     ):(
+      <p></p>
+     )
+      }
+     </div>
       <h1 className="text-3xl font-bold text-teal-600 mb-8 text-center">All Courses</h1>
 
 

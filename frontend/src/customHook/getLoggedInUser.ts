@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { User } from '../interfaces/Types';
 
 const BACKEND_URL = 'http://localhost:5007';
 const API_URL = `${BACKEND_URL}/users/`;
 
-interface User {
-  name: string;
-  // other fields as needed
-}
+
 
 const ActiveUser = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -20,7 +18,6 @@ const ActiveUser = () => {
         const response = await axios.get(API_URL + 'getLoggedInUser', {
           withCredentials: true,
         });
-        console.log(response.data.user)
         setUser(response.data.user);
       } catch (error) {
         setError('Failed to fetch user');
@@ -31,9 +28,11 @@ const ActiveUser = () => {
     };
 
     getUser();
+    
   }, []);
 
   return { user, loading, error };
+
 };
 
 export default ActiveUser;
