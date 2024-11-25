@@ -10,6 +10,7 @@ import profile from "../../assets/profile.png";
 import { AppDispatch, RootState } from "../../Redux/Features/store";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, RESET } from "../../Redux/Features/Auth/authSlice";
+import ActiveUser from "../../customHook/getLoggedInUser";
 
 interface UserSidebarProps {
   closeSidebar: () => void;
@@ -19,7 +20,7 @@ interface UserSidebarProps {
 const UserSidebar: React.FC<UserSidebarProps> = ({ closeSidebar, toggle }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading } = useSelector((state: RootState) => state.auth);
-
+  const {user}=ActiveUser()
   const logoutUser = async () => {
     if (!isLoading) {
       dispatch(RESET());
@@ -35,7 +36,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({ closeSidebar, toggle }) => {
         className="pb-4 w-full border-b border-teal-200 flex justify-center items-center"
       >
         <img src={profile} className="w-12 h-12 mt-2 rounded-full" alt="Profile" />
-        <p className="mt-2 ml-3 text-teal-700 font-semibold">Jotham Micheni</p>
+        <p className="mt-2 ml-3 text-teal-700 font-semibold">{user?.name}</p>
       </div>
       
       <div className="flex-grow pt-5">
