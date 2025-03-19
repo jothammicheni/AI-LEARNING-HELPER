@@ -65,7 +65,7 @@ To set up the project locally, follow these steps:-
     ```bash
     pnpm run dev
 6. **Set up environment variables:**
-   - Configure API keys for AI services in a .env file.
+   - Configure API keys for AI services in a .env file
 
 ## Usage:
 
